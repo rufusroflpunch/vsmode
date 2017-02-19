@@ -21,17 +21,19 @@ export class ModalState {
 
   async processCommand(cmd: string) {
     if (this.currentMode === Mode.Insert) {
-      const selection = vscode.window.activeTextEditor.selections[0];
-      const pos = selection.active;
-      let nextCursorDir: utils.CursorDirection;
-      const document = await vscode.window.activeTextEditor.edit((textEdit) => {
-        if (cmd === '<BS>') { this.deletePreviousChar(textEdit, pos); }
-        else if (pairs.isBracket(cmd)) { nextCursorDir = this.insertBracket(textEdit, pos, cmd); }
-        else if (pairs.isQuote(cmd)) { nextCursorDir = this.insertQuote(textEdit, pos, cmd); }
-        else { textEdit.insert(pos,cmd); }
-      });
-      // After inserting a quote or bracket, the cursor may have to move
-      if (nextCursorDir) { utils.moveCursor(nextCursorDir); }
+      const selections = vscode.window.activeTextEditor.selections;
+      for (let selection of selections) {
+        const pos = selection.active;
+        let nextCursorDir: utils.CursorDirection;
+        const document = await vscode.window.activeTextEditor.edit((textEdit) => {
+          if (cmd === '<BS>') { this.deletePreviousChar(textEdit, pos); }
+          else if (pairs.isBracket(cmd)) { nextCursorDir = this.insertBracket(textEdit, pos, cmd); }
+          else if (pairs.isQuote(cmd)) { nextCursorDir = this.insertQuote(textEdit, pos, cmd); }
+          else { textEdit.insert(pos,cmd); }
+        });
+        // After inserting a quote or bracket, the cursor may have to move
+        if (nextCursorDir) { utils.moveCursor(nextCursorDir); }
+      }
       return;
     }
 
@@ -106,7 +108,7 @@ export class ModalState {
   }
 
   private async deletePreviousChar(textEdit: vscode.TextEditorEdit, pos: vscode.Position) {
-    let char = utils.getChar(pos.translate({characterDelta: -1}));
+    let char = pos.character === 0 ? '' : utils.getChar(pos.translate({characterDelta: -1}));
     let nextChar = utils.getChar(pos);
     if (pairs.isQuote(char)) {
       await vscode.commands.executeCommand('deleteLeft');

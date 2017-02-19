@@ -7,16 +7,32 @@ export let commandRegistry = {
   "i": {
     repeatable: false,
     exec: (state: ModalState) => {
+      // If the cursor is at the end of the selection instead of the front, swap the anchor and cursor
+      let newSelection: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        if (selection.anchor.isBefore(selection.active)) {
+          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
+        } else {
+          newSelection.push(selection);
+        }
+      }
+      vscode.window.activeTextEditor.selections = newSelection;
       state.setMode(Mode.Insert);
     }
   },
   "a": {
     repeatable: false,
     exec: (state: ModalState) => {
-      const selection = vscode.window.activeTextEditor.selections[0];
-      let position = selection.active.translate({characterDelta: 1});
-      position = vscode.window.activeTextEditor.document.validatePosition(position);
-      vscode.window.activeTextEditor.selections = [new vscode.Selection(position, position)];
+      // If the cursor is at the beginning of the selection instead of the end, swap the anchor and cursor
+      let newSelection: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        if (selection.anchor.isAfter(selection.active)) {
+          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
+        } else {
+          newSelection.push(selection);
+        }
+      }
+      vscode.window.activeTextEditor.selections = newSelection;
       state.setMode(Mode.Insert);
     }
   },
