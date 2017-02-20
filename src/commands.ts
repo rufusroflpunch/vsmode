@@ -26,7 +26,11 @@ export let commandRegistry = {
       // If the cursor is at the beginning of the selection instead of the end, swap the anchor and cursor
       let newSelection: vscode.Selection[] = [];
       for (let selection of vscode.window.activeTextEditor.selections) {
-        if (selection.anchor.isAfter(selection.active)) {
+        if (selection.anchor.isEqual(selection.active)) {
+          // If it's a single character selection, shift the cursor to the right
+          const newPos = selection.active.with(selection.active.line, selection.active.character + 1);
+          newSelection.push(new vscode.Selection(newPos, newPos));
+        } else if (selection.anchor.isAfter(selection.active)) {
           newSelection.push(new vscode.Selection(selection.active, selection.anchor));
         } else {
           newSelection.push(selection);
@@ -94,7 +98,8 @@ export let commandRegistry = {
       for (let selection of selections) {
         let start = selection.active;
         const text = utils.getToEof(start);
-        const jump = text.match(/^\w*\s*/)[0].length;
+        let jump = text.match(/^[^\w\s]*/)[0].length;
+        if (jump <= 0) { jump = text.match(/^\w*\s*/)[0].length; }
         newSelections.push(
           new vscode.Selection(
             start,
@@ -113,7 +118,8 @@ export let commandRegistry = {
       let newSelections: vscode.Selection[] = [];
       for (let selection of selections) {
         const text = utils.getToEof(selection.active);
-        const jump = text.match(/^\w*\s*/)[0].length;
+        let jump = text.match(/^[^\w\s]*/)[0].length;
+        if (jump <= 0) { jump = text.match(/^\w*\s*/)[0].length; }
         newSelections.push(
           new vscode.Selection(
             selection.anchor,
@@ -134,7 +140,8 @@ export let commandRegistry = {
       for (let selection of selections) {
         let start = selection.active;
         const text = utils.getToEof(start);
-        const jump = text.match(/^\s*\w*/)[0].length;
+        let jump = text.match(/^[^\w\s]*/)[0].length;
+        if (jump <= 0) { jump = text.match(/^\s*\w*/)[0].length; }
         newSelections.push(
           new vscode.Selection(
             start,
@@ -153,7 +160,8 @@ export let commandRegistry = {
       let newSelections: vscode.Selection[] = [];
       for (let selection of selections) {
         const text = utils.getToEof(selection.active);
-        const jump = text.match(/^\s*\w*/)[0].length;
+        let jump = text.match(/^[^\w\s]*/)[0].length;
+        if (jump <= 0) { jump = text.match(/^\s*\w*/)[0].length; }
         newSelections.push(
           new vscode.Selection(
             selection.anchor,
@@ -213,6 +221,19 @@ export let commandRegistry = {
     exec: async (state: ModalState, char: string, forward: boolean) => {
       utils.goToChar(char, false, forward);
       state.setMode(Mode.Selection);
+    }
+  },
+  "x": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      state.resetCursor();
+      await vscode.commands.executeCommand('expandLineSelection');
+    }
+  },
+  "X": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      await vscode.commands.executeCommand('expandLineSelection');
     }
   }
 }

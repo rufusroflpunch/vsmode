@@ -72,7 +72,7 @@ export class ModalState {
         this.resetCursor(); // Clear selection in insert mode
         break;
       default:
-        vscode.window.activeTextEditor.options.cursorStyle = vscode.TextEditorCursorStyle.Underline;
+        vscode.window.activeTextEditor.options.cursorStyle = vscode.TextEditorCursorStyle.Block;
         break;
     }
   }
