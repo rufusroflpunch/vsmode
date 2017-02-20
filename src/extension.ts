@@ -31,6 +31,26 @@ export function activate(context: vscode.ExtensionContext) {
         modalState.processCommand('<BS>')
     });
     context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.selectToLineBegin', () => {
+        modalState.processCommand('selectToLineBegin');
+    });
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.selectToLineBeginFull', () => {
+        modalState.processCommand('selectToLineBeginFull');
+    });
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.selectToLineEnd', () => {
+        modalState.processCommand('selectToLineEnd');
+    });
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.selectToLineEndFull', () => {
+        modalState.processCommand('selectToLineEnd');
+    });
+    context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated

@@ -40,6 +40,16 @@ export let commandRegistry = {
       state.setMode(Mode.Insert);
     }
   },
+  "d": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        await vscode.window.activeTextEditor.edit((textEdit) => {
+          textEdit.delete(selection);
+        });
+      }  
+    }
+  },
   "h": {
     repeatable: true,
     exec: (state: ModalState) => {
@@ -234,6 +244,103 @@ export let commandRegistry = {
     repeatable: false,
     exec: async (state: ModalState) => {
       await vscode.commands.executeCommand('expandLineSelection');
+    }
+  },
+  "m": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      // VSCode's jump to bracket functionality doesn't work across multiple cursors (as of now), or
+      // support selections, so we copy the original cursors, then loop through each one and jump to bracket,
+      // then use the original anochor as the selection point for a new set of selections.
+      state.resetCursor();
+      const originalSelections = vscode.window.activeTextEditor.selections;
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of originalSelections) {
+        vscode.window.activeTextEditor.selection = selection;
+        await vscode.commands.executeCommand('editor.action.jumpToBracket');
+        const delta = selection.anchor.isBefore(vscode.window.activeTextEditor.selection.active) ? 1 : 0;
+        const newSelection = new vscode.Selection(selection.anchor, vscode.window.activeTextEditor.selection.active.translate({characterDelta: delta}));
+        newSelections.push(newSelection);
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "M": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      // See "m" for notes on how this works. It can be tricky!
+      const originalSelections = vscode.window.activeTextEditor.selections;
+      state.resetCursor();
+      const selectionsAfterReset = vscode.window.activeTextEditor.selections;
+      let newSelections: vscode.Selection[] = [];
+      for (let selection in selectionsAfterReset) {
+        vscode.window.activeTextEditor.selection = selectionsAfterReset[selection];
+        await vscode.commands.executeCommand('editor.action.jumpToBracket');
+        const delta = selectionsAfterReset[selection].anchor.isBefore(vscode.window.activeTextEditor.selection.active) ? 1 : 0;
+        const newSelection = new vscode.Selection(originalSelections[selection].anchor, vscode.window.activeTextEditor.selection.active.translate({characterDelta: delta}));
+        newSelections.push(newSelection);
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "%": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelection = new vscode.Selection(
+        new vscode.Position(0,0),
+        utils.getEOF()
+      );
+      vscode.window.activeTextEditor.selections = [newSelection];
+    }
+  },
+  "selectToLineBegin": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        let newStart = selection.active.translate({characterDelta: 1});
+        let newEnd = selection.active.with({character: 0});
+        newSelections.push(new vscode.Selection(newStart, newEnd));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "selectToLineBeginFull": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        let newStart = selection.anchor
+        let newEnd = selection.active.with({character: 0});
+        newSelections.push(new vscode.Selection(newStart, newEnd));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "selectToLineEnd": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        const lineLength = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text.length;
+        let newEnd = selection.active.translate({characterDelta: lineLength});
+        let newStart = selection.active
+        newSelections.push(new vscode.Selection(newStart, newEnd));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "selectToLineEndFull": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        const lineLength = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text.length;
+        let newEnd = selection.active.translate({characterDelta: lineLength});
+        let newStart = selection.anchor
+        newSelections.push(new vscode.Selection(newStart, newEnd));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
     }
   }
 }

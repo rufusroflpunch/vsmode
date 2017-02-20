@@ -32,6 +32,22 @@
             {
                 "command": "vsmode.deletePreviousChar",
                 "key": "backspace"
+            },
+            {
+                "command": "vsmode.selectToLineBegin",
+                "key": "alt+h"
+            },
+            {
+                "command": "vsmode.selectToLineBeginFull",
+                "key": "alt+shift+h"
+            },
+            {
+                "command": "vsmode.selectToLineEnd",
+                "key": "alt+l"
+            },
+            {
+                "command": "vsmode.selectToLineEndFull",
+                "key": "alt+shift+l"
             }
         ]
     },
