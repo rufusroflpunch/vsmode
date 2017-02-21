@@ -348,5 +348,11 @@ export let commandRegistry = {
       }
       vscode.window.activeTextEditor.selections = newSelections;
     }
+  },
+  ";": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      state.resetCursor();
+    }
   }
 }
