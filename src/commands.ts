@@ -4,58 +4,9 @@ import { Mode } from './mode';
 import * as utils from './utils';
 
 export let commandRegistry = {
-  "i": {
-    repeatable: false,
-    exec: (state: ModalState) => {
-      // If the cursor is at the end of the selection instead of the front, swap the anchor and cursor
-      let newSelection: vscode.Selection[] = [];
-      for (let selection of vscode.window.activeTextEditor.selections) {
-        if (selection.anchor.isBefore(selection.active)) {
-          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
-        } else {
-          newSelection.push(selection);
-        }
-      }
-      vscode.window.activeTextEditor.selections = newSelection;
-      state.setMode(Mode.Insert);
-    }
-  },
-  "a": {
-    repeatable: false,
-    exec: (state: ModalState) => {
-      // If the cursor is at the beginning of the selection instead of the end, swap the anchor and cursor
-      let newSelection: vscode.Selection[] = [];
-      for (let selection of vscode.window.activeTextEditor.selections) {
-        if (selection.anchor.isEqual(selection.active)) {
-          // If it's a single character selection, shift the cursor to the right
-          const newPos = selection.active.with(selection.active.line, selection.active.character + 1);
-          newSelection.push(new vscode.Selection(newPos, newPos));
-        } else if (selection.anchor.isAfter(selection.active)) {
-          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
-        } else {
-          newSelection.push(selection);
-        }
-      }
-      vscode.window.activeTextEditor.selections = newSelection;
-      state.setMode(Mode.Insert);
-    }
-  },
-  "d": {
-    repeatable: false,
-    exec: async (state: ModalState) => {
-      for (let selection of vscode.window.activeTextEditor.selections) {
-        await vscode.window.activeTextEditor.edit((textEdit) => {
-          if (selection.isEmpty) {
-            // If it's empty (one character), extend selection to delete
-            let newPos = selection.active.translate({characterDelta: 1});
-            textEdit.delete(new vscode.Selection(newPos, selection.active));
-          } else {
-            textEdit.delete(selection);
-          }
-        });
-      }  
-    }
-  },
+  /*
+  ** MOVEMENT AND SELECTION COMMANDS
+  */
   "h": {
     repeatable: true,
     exec: (state: ModalState) => {
@@ -377,6 +328,191 @@ export let commandRegistry = {
         }
       }
       vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  /*
+  ** CHANGES (non-normal mode). Changing the buffer
+  */
+  "i": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      // If the cursor is at the end of the selection instead of the front, swap the anchor and cursor
+      let newSelection: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        if (selection.anchor.isBefore(selection.active)) {
+          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
+        } else {
+          newSelection.push(selection);
+        }
+      }
+      vscode.window.activeTextEditor.selections = newSelection;
+      state.setMode(Mode.Insert);
+    }
+  },
+  "a": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      // If the cursor is at the beginning of the selection instead of the end, swap the anchor and cursor
+      let newSelection: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        if (selection.anchor.isEqual(selection.active)) {
+          // If it's a single character selection, shift the cursor to the right
+          const newPos = selection.active.with(selection.active.line, selection.active.character + 1);
+          newSelection.push(new vscode.Selection(newPos, newPos));
+        } else if (selection.anchor.isAfter(selection.active)) {
+          newSelection.push(new vscode.Selection(selection.active, selection.anchor));
+        } else {
+          newSelection.push(selection);
+        }
+      }
+      vscode.window.activeTextEditor.selections = newSelection;
+      state.setMode(Mode.Insert);
+    }
+  },
+  "d": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        await vscode.window.activeTextEditor.edit((textEdit) => {
+          if (selection.isEmpty) {
+            // If it's empty (one character), extend selection to delete
+            let newPos = selection.active.translate({characterDelta: 1});
+            textEdit.delete(new vscode.Selection(newPos, selection.active));
+          } else {
+            textEdit.delete(selection);
+          }
+        });
+      }  
+    }
+  },
+  /*
+  ** GOTO commands
+  */
+  "g": {
+    repeatable: false,
+    exec: (state: ModalState, lineNumber: number) => {
+      if (lineNumber) {
+        let newPos = new vscode.Position(lineNumber - 1, 0);
+        vscode.window.activeTextEditor.selections = [new vscode.Selection(newPos, newPos)];
+      } else {
+        state.setMode(Mode.Goto);
+      }
+    }
+  },
+  "G": {
+    repeatable: false,
+    exec: (state: ModalState, lineNumber: number) => {
+      if (lineNumber) {
+        let newPos = new vscode.Position(lineNumber - 1, 0);
+        vscode.window.activeTextEditor.selections = [new vscode.Selection(vscode.window.activeTextEditor.selection.anchor, newPos)];
+      } else {
+        state.setMode(Mode.Goto);
+      }
+    }
+  },
+  "g:h": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      state.resetCursor();
+      await vscode.commands.executeCommand('cursorHome');
+    }
+  },
+  "G:h": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      await vscode.commands.executeCommand('cursorHomeSelect');
+    }
+  },
+  "g:l": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      await vscode.commands.executeCommand('cursorEnd');
+    }
+  },
+  "G:l": {
+    repeatable: false,
+    exec: async (state: ModalState) => {
+      await vscode.commands.executeCommand('cursorEndSelect');
+    }
+  },
+  "g:i": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        const idx = vscode.window.activeTextEditor.document.lineAt(selection.active.line).firstNonWhitespaceCharacterIndex;
+        const newPos = new vscode.Position(selection.active.line, idx);
+        newSelections.push(new vscode.Selection(newPos, newPos));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "G:i": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        const idx = vscode.window.activeTextEditor.document.lineAt(selection.active.line).firstNonWhitespaceCharacterIndex;
+        const newPos = new vscode.Position(selection.active.line, idx);
+        newSelections.push(new vscode.Selection(selection.anchor, newPos));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
+  },
+  "g:g": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const newPos = new vscode.Position(0,0);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(newPos, newPos)];
+    }
+  },
+  "G:g": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const newPos = new vscode.Position(0,0);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(vscode.window.activeTextEditor.selection.anchor, newPos)];
+    }
+  },
+  "g:k": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      state.processCommand('g:g');
+    }
+  },
+  "G:k": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      state.processCommand('G:g');
+    }
+  },
+  "g:j": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const newPos = new vscode.Position(vscode.window.activeTextEditor.document.lineCount - 1, 0);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(newPos, newPos)];
+    },
+  },
+  "G:j": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const newPos = new vscode.Position(vscode.window.activeTextEditor.document.lineCount - 1, 0);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(vscode.window.activeTextEditor.selection.anchor, newPos)];
+    }
+  },
+  "g:e": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const finalLineNumber = vscode.window.activeTextEditor.document.lineCount - 1;
+      const newPos = new vscode.Position(finalLineNumber, vscode.window.activeTextEditor.document.lineAt(finalLineNumber).text.length);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(newPos, newPos)];
+    }
+  },
+  "G:e": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      const finalLineNumber = vscode.window.activeTextEditor.document.lineCount - 1;
+      const newPos = new vscode.Position(finalLineNumber, vscode.window.activeTextEditor.document.lineAt(finalLineNumber).text.length);
+      vscode.window.activeTextEditor.selections = [new vscode.Selection(vscode.window.activeTextEditor.selection.anchor, newPos)];
     }
   }
 }
