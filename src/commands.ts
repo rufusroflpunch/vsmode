@@ -354,5 +354,15 @@ export let commandRegistry = {
     exec: (state: ModalState) => {
       state.resetCursor();
     }
+  },
+  "flipSelections": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        newSelections.push(new vscode.Selection(selection.active, selection.anchor));
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
   }
 }

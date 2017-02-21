@@ -51,6 +51,11 @@ export function activate(context: vscode.ExtensionContext) {
         modalState.processCommand('selectToLineEnd');
     });
     context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.flipSelections', () => {
+        modalState.processCommand('flipSelections');
+    });
+    context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated

@@ -48,6 +48,10 @@
             {
                 "command": "vsmode.selectToLineEndFull",
                 "key": "alt+shift+l"
+            },
+            {
+                "command": "vsmode.flipSelections",
+                "key": "alt+;"
             }
         ]
     },
