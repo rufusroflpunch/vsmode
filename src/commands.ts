@@ -364,5 +364,19 @@ export let commandRegistry = {
       }
       vscode.window.activeTextEditor.selections = newSelections;
     }
+  },
+  "orientSelections": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let newSelections: vscode.Selection[] = [];
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        if (selection.anchor.isAfter(selection.active)) {
+          newSelections.push(new vscode.Selection(selection.active, selection.anchor));
+        } else {
+          newSelections.push(selection);
+        }
+      }
+      vscode.window.activeTextEditor.selections = newSelections;
+    }
   }
 }

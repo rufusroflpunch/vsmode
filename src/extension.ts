@@ -56,6 +56,11 @@ export function activate(context: vscode.ExtensionContext) {
         modalState.processCommand('flipSelections');
     });
     context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.orientSelections', () => {
+        modalState.processCommand('orientSelections');
+    });
+    context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated
