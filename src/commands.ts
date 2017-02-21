@@ -45,7 +45,13 @@ export let commandRegistry = {
     exec: async (state: ModalState) => {
       for (let selection of vscode.window.activeTextEditor.selections) {
         await vscode.window.activeTextEditor.edit((textEdit) => {
-          textEdit.delete(selection);
+          if (selection.isEmpty) {
+            // If it's empty (one character), extend selection to delete
+            let newPos = selection.active.translate({characterDelta: 1});
+            textEdit.delete(new vscode.Selection(newPos, selection.active));
+          } else {
+            textEdit.delete(selection);
+          }
         });
       }  
     }
