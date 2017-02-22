@@ -1,20 +1,26 @@
 import { Mode } from './mode'
 import { commandRegistry } from './commands'
+import { RegisterKeeper } from './register_keeper'
 import * as utils from './utils'
 import * as pairs from './pairs'
 import * as vscode from 'vscode'
 
+/**
+ * A behemoth of a state class that manages the entire state of the modal editing suite.
+ */
 export class ModalState {
   public currentMode: Mode;
   public searchForward = true;
+  public selectionRegisters = new RegisterKeeper<vscode.Selection>('^');
   private repeatCounter: string;
+  private register: string;
   
   constructor() {
     this.resetState();    
   }
 
   resetState() {
-    this.setMode(Mode.Selection);
+    this.setMode(Mode.BasicMovement);
     this.resetCursor();
     this.repeatCounter = "";
   }
@@ -43,10 +49,14 @@ export class ModalState {
     // back to Mode.Selection for processing in the normal way.
     if (this.currentMode == Mode.Goto) {
       cmd = `g:${cmd}`
-      this.setMode(Mode.Selection);
+      this.setMode(Mode.BasicMovement);
     } else if (this.currentMode == Mode.GotoExtend) {
       cmd = `G:${cmd}`
-      this.setMode(Mode.Selection);
+      this.setMode(Mode.BasicMovement);
+    } else if (this.currentMode == Mode.Register) {
+      this.setRegister(cmd);
+      this.setMode(Mode.BasicMovement);
+      return;
     }
 
     // Some commands can be repeated some number of times.
@@ -55,7 +65,7 @@ export class ModalState {
       return;
     }
 
-    if (this.currentMode === Mode.Selection && commandRegistry[cmd]) {
+    if (this.currentMode === Mode.BasicMovement && commandRegistry[cmd]) {
       // Only execute once if the command is not repeatable or number is imparseable.
       // If the command isn't repeatable, pass the number in as an argument to the command
       // (useful for the go command, like 30g to jump to line 30).
@@ -100,6 +110,16 @@ export class ModalState {
       newSelections.push(new vscode.Selection(cursorPos, cursorPos));
     }
     vscode.window.activeTextEditor.selections = newSelections;
+  }
+
+  getRegister() {
+    let reg = this.register;
+    this.register = undefined;
+    return reg;
+  }
+
+  setRegister(register: string) {
+    this.register = register;
   }
 
   private insertBracket(textEdit: vscode.TextEditorEdit, pos: vscode.Position, cmd: string): utils.CursorDirection {

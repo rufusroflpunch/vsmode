@@ -1,8 +1,9 @@
 export enum Mode {
-  Selection,
+  BasicMovement,
   Insert,
   CharacterFind,
   CharacterTo,
   Goto,
-  GotoExtend
+  GotoExtend,
+  Register
 }

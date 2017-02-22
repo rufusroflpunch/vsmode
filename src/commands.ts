@@ -168,7 +168,7 @@ export let commandRegistry = {
   "findChar": {
     exec: async (state: ModalState, char: string, forward: boolean) => {
       utils.goToChar(char, true, forward);
-      state.setMode(Mode.Selection);
+      state.setMode(Mode.BasicMovement);
     }
   },
   "t": {
@@ -187,7 +187,7 @@ export let commandRegistry = {
     repeatable: false,
     exec: async (state: ModalState, char: string, forward: boolean) => {
       utils.goToChar(char, false, forward);
-      state.setMode(Mode.Selection);
+      state.setMode(Mode.BasicMovement);
     }
   },
   "x": {
@@ -513,6 +513,52 @@ export let commandRegistry = {
       const finalLineNumber = vscode.window.activeTextEditor.document.lineCount - 1;
       const newPos = new vscode.Position(finalLineNumber, vscode.window.activeTextEditor.document.lineAt(finalLineNumber).text.length);
       vscode.window.activeTextEditor.selections = [new vscode.Selection(vscode.window.activeTextEditor.selection.anchor, newPos)];
+    }
+  },
+  /*
+  ** REGISTERS
+  */
+  '"': {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      state.setMode(Mode.Register);
+    }
+  },
+  /*
+  ** MARKS
+  */
+  "Z": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let register = state.getRegister();
+      state.selectionRegisters.clearRegister(register);
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        state.selectionRegisters.appendToRegister(selection, register);
+      }
+    }
+  },
+  "appendRegisterSelections" : {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let register = state.getRegister();
+      for (let selection of vscode.window.activeTextEditor.selections) {
+        state.selectionRegisters.appendToRegister(selection, register);
+      }
+    }
+  },
+  "z": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let register = state.getRegister();
+      vscode.window.activeTextEditor.selections = state.selectionRegisters.getRegister(register);
+    }
+  },
+  "addRegisterSelections": {
+    repeatable: false,
+    exec: (state: ModalState) => {
+      let register = state.getRegister();
+      vscode.window.activeTextEditor.selections =
+        vscode.window.activeTextEditor.selections.concat(state.selectionRegisters.getRegister(register));
     }
   }
 }

@@ -11,7 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable);
 
     disposable = vscode.commands.registerCommand('vsmode.leaveInsertMode', () => {
-       modalState.setMode(Mode.Selection);
+       modalState.setMode(Mode.BasicMovement);
     });
     context.subscriptions.push(disposable);
 
@@ -59,6 +59,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     disposable = vscode.commands.registerCommand('vsmode.orientSelections', () => {
         modalState.processCommand('orientSelections');
+    });
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.appendRegisterSelections', () => {
+        modalState.processCommand('appendRegisterSelections');
+    });
+    context.subscriptions.push(disposable);
+
+    disposable = vscode.commands.registerCommand('vsmode.addRegisterSelections', () => {
+        modalState.processCommand('addRegisterSelections');
     });
     context.subscriptions.push(disposable);
 }

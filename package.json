@@ -56,6 +56,14 @@
             {
                 "command": "vsmode.orientSelections",
                 "key": "alt+shift+;"
+            },
+            {
+                "command": "vsmode.appendRegisterSelections",
+                "key": "alt+shift+z"
+            },
+            {
+                "command": "vsmode.addRegisterSelections",
+                "key": "alt+z"
             }
         ]
     },
